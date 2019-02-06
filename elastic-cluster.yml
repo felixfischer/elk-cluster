@@ -1,0 +1,104 @@
+version: '3.6'
+
+x-service: &elasticsearch
+  image: elasticsearch:6.5.4
+  networks:
+    - cluster
+  configs:
+    - source: elasticsearch
+      target: /usr/share/elasticsearch/config/elasticsearch.yml
+
+x-environment: &environment
+  cluster.name: elastic-cluster
+  node.master: 'true'
+  node.data: 'true'
+  node.ingest: 'true'
+  discovery.zen.ping.unicast.hosts: access,data-1,data-2,data-3
+  MAX_LOCKED_MEMORY: unlimited
+  ES_JAVA_OPTS: '-Xms1700M -Xmx1700M -XX:ParallelGCThreads=1 -XX:CICompilerCount=2'
+  # bootstrap.memory_lock: 'true'
+
+x-resources-cx21: &cx21 # 2CPU 4GB 40 GB
+  limits: 
+    cpus: '2'
+    memory: 3.4G
+  reservations:
+    cpus: '1'
+    memory: 3.4G
+
+x-resources-cx41: &cx41 # 4CPU 16GB 160 GB
+  limits: 
+    cpus: '3.5'
+    memory: 7.5G
+  reservations:
+    cpus: '1.5'
+    memory: 7.5G
+
+x-deploy: &deploy
+  resources: *cx21
+  restart_policy:
+    delay: 30s
+  placement:
+    constraints:
+      - node.labels.for == data-node
+
+# ------------------------------------------------------------------------------------------------ #
+
+networks:
+  cluster:
+    driver: overlay
+    attachable: true
+
+volumes:
+  access:
+  data-1:
+  data-2:
+  data-3:
+
+configs:
+  elasticsearch:
+    file: ./configs/elasticsearch.yml
+
+services:
+  data-1:
+    <<: *elasticsearch
+    environment:
+      <<: *environment
+      node.name: data-1
+    volumes:
+      - data-1:/usr/share/elasticsearch/data
+    deploy: *deploy
+
+  data-2:
+    <<: *elasticsearch
+    environment:
+      <<: *environment
+      node.name: data-2
+    volumes:
+      - data-2:/usr/share/elasticsearch/data
+    deploy: *deploy
+
+  data-3:
+    <<: *elasticsearch
+    environment:
+      <<: *environment
+      node.name: data-3
+    volumes:
+      - data-3:/usr/share/elasticsearch/data
+    deploy: *deploy
+
+  access:
+    <<: *elasticsearch
+    environment:
+      <<: *environment
+      node.name: access
+      node.master: 'false'
+      node.data: 'false'
+      node.ingest: 'false'
+    volumes:
+      - access:/usr/share/elasticsearch/data
+    deploy:
+      <<: *deploy
+      placement:
+        constraints:
+          - node.labels.for == access-node

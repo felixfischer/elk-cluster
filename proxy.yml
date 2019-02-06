@@ -1,0 +1,40 @@
+version: '3.6'
+
+networks:
+  proxy:
+    driver: overlay
+    attachable: true
+
+configs:
+  caddy:
+    file: ./configs/Caddyfile
+
+services:
+  proxy:
+    image: felixfischer/caddy-docker:latest
+    hostname: caddy
+    command: '-conf "/etc/caddy/Caddyfile" -agree=true -email ops@neulandherzer.com -log /etc/caddy/logs/caddy.log'
+    expose: [80,443]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/etc/caddy
+    configs:
+      - source: caddy
+        target: /etc/caddy/Caddyfile
+    environment:
+      CADDYPATH: /etc/caddy
+      ACME_AGREE: 'true'
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: '128M'
+        reservations:
+          memory: '64M'
+      restart_policy:
+        condition: 'any'
+        delay: '30s'

@@ -1,6 +1,8 @@
 path:
   data:
     - /usr/share/elasticsearch/data
+  logs:
+    - /usr/share/elasticsearch/logs
 
 cluster:
   routing:
@@ -13,7 +15,7 @@ cluster:
       enable: all
 
 network:
-  host: _eth0_
+  host: 0.0.0.0
 
 http:
   host: 0.0.0.0

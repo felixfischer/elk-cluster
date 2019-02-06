@@ -1,3 +1,3 @@
 # elk-cluster
 
-`docker stack up elasticsearch -c stack.yml`
+`docker stack up elasticsearch -c elastic-cluster.yml`
